@@ -5,7 +5,9 @@
 #include "path.h"
 
 char *
-get_basename(const char *path) {
+get_basename(
+	const char *path
+) {
 	if (path == NULL) {
 		fputs("NULL ptr passed to get_basename()\n", stderr);
 		return NULL;

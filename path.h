@@ -8,6 +8,8 @@
  * a '/'.
  * @return ptr to start of basename, or NULL on error. */
 char *
-get_basename(const char *path); //!< filepath
+get_basename(
+	const char *path //!< filepath
+);
 
 #endif
