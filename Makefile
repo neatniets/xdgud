@@ -5,16 +5,20 @@
 
 include config.mk
 
-SRC=xdgud.c
+SRC=xdgud.c path.c
 OBJ=$(SRC:.c=.o)
 
-all: xdgud
+all: xdgud xdg-user-dir
 
 clean:
-	rm -f xdgud $(OBJ)
+	rm -f xdgud xdg-user-dir $(OBJ)
 
-xdgud: xdgud.o
+xdgud: xdgud.o path.o
 	$(CC) $(LDFLAGS) -o $@ $(OBJ)
+xdg-user-dir: xdgud
+	ln -s xdgud $@
 
+xdgud.o: path.h
+path.o: path.h
 .c.o:
 	$(CC) $(CFLAGS) -o $@ -c $<
