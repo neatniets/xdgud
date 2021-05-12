@@ -6,9 +6,8 @@
  * '/' is the path separator.
  * The return will point to the null byte in the event that @p path ends with
  * a '/'.
- * @param path filepath.
  * @return ptr to start of basename, or NULL on error. */
 char *
-get_basename(const char *path);
+get_basename(const char *path); //!< filepath
 
 #endif
