@@ -19,11 +19,8 @@ main(
 	char *argv[]
 ) {
 	/* check if prog called by XDG_NAME */
-	short is_xdg_user_dir = 0;
 	const char *base = get_basename(*argv);
-	if (strcmp(base, XDG_NAME) == 0) {
-		is_xdg_user_dir = 1;
-	}
+	short is_xdg_user_dir = (strcmp(base, XDG_NAME) == 0);
 
 	/* parse options */
 	int optc;
