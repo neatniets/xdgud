@@ -1,15 +1,16 @@
 #include <stddef.h>
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "path.h"
+#include "printerr.h"
 
 char *
 get_basename(
 	const char *path
 ) {
 	if (path == NULL) {
-		fputs("NULL ptr passed to get_basename()\n", stderr);
+		printerr("NULL ptr supplied to get_basename()\n");
 		return NULL;
 	}
 

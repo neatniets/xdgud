@@ -19,7 +19,7 @@ xdg-user-dir: xdgud
 	ln -s xdgud $@
 
 xdgud.o: path.h
-path.o: path.h
+path.o: path.h printerr.h
 printerr.o: printerr.h
 .c.o:
 	$(CC) $(CFLAGS) -o $@ -c $<
