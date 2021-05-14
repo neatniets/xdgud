@@ -21,7 +21,7 @@ xdg-user-dir: xdgud
 xdgud.o: path.h
 path.o: path.h printerr.h
 printerr.o: printerr.h
-xdg.o: xdg.h printerr.h
+xdg.o: xdg.h printerr.h path.h
 .c.o:
 	$(CC) $(CFLAGS) -o $@ -c $<
 

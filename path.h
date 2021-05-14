@@ -1,6 +1,8 @@
 #ifndef PATH_H
 #define PATH_H
 
+#include <sys/types.h>
+
 /** Character used for separating path hierarchies. */
 #define PATHSEP '/'
 
@@ -13,5 +15,17 @@ char *
 get_basename(
 	const char *path //!< filepath
 );
+
+/** Get the XDG user config directory, defaulting as necessary.
+ * Value pointed to by @p confdirp should be freed only on successful return.
+ * The allocated size of @p confdirp will be one character larger than the
+ * length.
+ * @return 0 on success, <0 on error. */
+int
+get_config_home(
+	char **confdirp, //!< ptr to abs path of config dir
+	size_t *lenp //!< ptr to length of string
+);
+
 
 #endif
