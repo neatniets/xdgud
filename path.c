@@ -19,7 +19,7 @@ get_basename(
 	short is_base_found = 0;
 	/* repeat until base found or start of path reached */
 	while ((base != path) && (!is_base_found)) {
-		if (base[-1] == '/') {
+		if (base[-1] == PATHSEP) {
 			is_base_found = 1;
 		} else {
 			base--;
