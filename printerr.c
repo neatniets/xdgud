@@ -85,7 +85,6 @@ vprinterr_buf(
 
 	return 0;
 }
-
 static int
 vprinterr_sep(
 	short is_errno_wanted,
