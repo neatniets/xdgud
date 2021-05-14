@@ -93,6 +93,42 @@ get_config_home(
 	return len;
 }
 
+ssize_t
+path_append(
+	char **pathp,
+	size_t *szp,
+	const char *src
+) {
+	if ((pathp == NULL) || (szp == NULL) || (src == NULL)) {
+		printerr("NULL passed to path_append()\n");
+		return -1;
+	}
+	if (*pathp == NULL) {
+		printerr("path ptr points to NULL\n");
+		return -1;
+	}
+
+	/* computing lengths & removing extra separators */
+	ssize_t plen = strlen(*pathp);
+	plen -= ((*pathp)[plen - 1] == PATHSEP); // rm trailing sep
+	src += (src[0] == PATHSEP); // rm leading sep
+	const size_t slen = strlen(src);
+
+	/* make space */
+	if (alloc_str(plen + slen + 2, pathp, szp) < 0) {
+		printerr("could not alloc string for path\n");
+		return -1;
+	}
+	/* append */
+	(*pathp)[plen] = PATHSEP;
+	plen++;
+	memcpy(*pathp + plen, src, slen * sizeof(*src));
+	plen += slen;
+	(*pathp)[plen] = '\0';
+
+	return plen;
+}
+
 static short
 is_set(
 	const char *env_var

@@ -20,23 +20,13 @@ get_userdir_fpath(void) {
 		return NULL;
 	}
 
-	/* filename */
-	const char fname[] = "/user-dirs.dirs";
-	const size_t fnlen = (sizeof(fname) / sizeof(*fname)) - 1;
-
-	/* construct filename to append to dir */
-	const char *app = fname; // str to append
-	short is_pathsep_needed = (fpath[fplen - 1] == '/');
-	app += is_pathsep_needed; // don't append extra '/'
-	const size_t alen = fnlen - is_pathsep_needed;
-
-	/* append the filename */
-	if (fpsz < (fplen + alen + 1)) {
-		fpath = realloc(fpath, (fplen + alen + 1) * sizeof(*fpath));
+	/* append filename */
+	const char fname[] = "user-dirs.dirs";
+	fplen = path_append(&fpath, &fpsz, fname);
+	if (fplen < 0) {
+		printerr("could not append userdir filename\n");
+		return NULL;
 	}
-	memcpy(fpath + fplen, app, alen * sizeof(*app));
-	fplen += alen;
-	fpath[fplen] = '\0';
 
 	return fpath; // file may not be accessible or exist
 }

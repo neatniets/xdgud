@@ -30,4 +30,14 @@ get_config_home(
 	size_t *szp //!< ptr to characters allocated for path
 );
 
+/** Append a string to a path.
+ * Extra path separators between the two strings will be removed.
+ * @return length of path on success, -1 on error. */
+ssize_t
+path_append(
+	char **pathp, //!< ptr to path
+	size_t *szp, //!< ptr to num chars alloc for path
+	const char *src //!< string to append
+);
+
 #endif
