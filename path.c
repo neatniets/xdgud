@@ -13,6 +13,22 @@ is_set(
 	const char *env_var //!< string returned from getenv()
 );
 
+/** [Re-]allocate a string to accommodate the specified num of chars.
+ * @p req_sz is the minimum num of chars, but the actual allocation may be
+ * larger.
+ * If the values of @p strp and @p szp are NULL and 0, respectively, then a
+ * string will be allocated for the caller.
+ * The value pointed to by @p strp must be freed on a successful return.
+ * If the string is already large enough for the required size, nothing changes
+ * and 0 is returned.
+ * @return 0 on success, <0 on error. */
+static int
+alloc_str(
+	size_t req_sz, //!< num chars needed
+	char **strp, //!< ptr to string
+	size_t *szp //!< ptr to num chars alloc'd for string
+);
+
 char *
 get_basename(
 	const char *path
@@ -36,11 +52,16 @@ get_basename(
 	return (char *)base;
 }
 
-int
+ssize_t
 get_config_home(
 	char **confdirp,
-	size_t *lenp
+	size_t *szp
 ) {
+	if ((confdirp == NULL) || (szp == NULL)) {
+		printerr("NULL passed to get_config_home()\n");
+		return -1;
+	}
+
 	const char *dirpre; // prefix of abs path
 	const char *dirsuf; // possibly empty suffix of abs path
 
@@ -59,18 +80,17 @@ get_config_home(
 	/* alloc space */
 	const size_t dplen = strlen(dirpre);
 	const size_t dslen = strlen(dirsuf);
-	*lenp = dplen + dslen;
-	*confdirp = malloc((*lenp + 1) * sizeof(**confdirp));
-	if (*confdirp == NULL) {
-		printerr("malloc() fail:");
+	ssize_t len = dplen + dslen;
+	if (alloc_str(len + 1, confdirp, szp) < 0) {
+		printerr("could not allocate string for path\n");
 		return -1;
 	}
 	/* copy components */
 	memcpy(*confdirp, dirpre, dplen * sizeof(*dirpre));
 	memcpy(*confdirp + dplen, dirsuf, dslen * sizeof(*dirsuf));
-	(*confdirp)[*lenp] = '\0';
+	(*confdirp)[len] = '\0';
 
-	return 0;
+	return len;
 }
 
 static short
@@ -78,4 +98,36 @@ is_set(
 	const char *env_var
 ) {
 	return !((env_var == NULL) || (*env_var == '\0'));
+}
+
+static int
+alloc_str(
+	size_t req_sz,
+	char **strp,
+	size_t *szp
+) {
+	if ((strp == NULL) || (szp == NULL)) {
+		printerr("NULL passed to alloc_str()\n");
+		return -1;
+	}
+	if (*szp >= req_sz) { // requirement already met
+		return 0;
+	}
+
+	/* set size to default val if str is NULL */
+	short is_str_null = (*strp == NULL);
+	*szp = (*szp * !is_str_null) + is_str_null; // set to 1 if str is NULL
+
+	/* increase size until higher than required size */
+	do {
+		*szp <<= 1;
+	} while (*szp < req_sz);
+	/* [re-]alloc space */
+	*strp = realloc(*strp, *szp * sizeof(**strp)); // won't fail on NULL
+	if (*strp == NULL) {
+		printerr("realloc() failed:");
+		return -1;
+	}
+
+	return 0;
 }
