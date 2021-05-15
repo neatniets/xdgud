@@ -6,6 +6,8 @@
 
 #include "printerr.h"
 
+static short is_quiet = 0;
+
 /** Print the error msg to a buffer and then write to stderr.
  * Keeps the message as a single write and prevents other process messages from
  * being interwoven with this one.
@@ -29,10 +31,19 @@ vprinterr_sep(
 );
 
 void
+quiet(
+	short value //!< boolean
+) {
+	is_quiet = (value && 1); // ensures it's only 0 or 1
+}
+void
 printerr(
 	const char *restrict fmt,
 	...
 ) {
+	if (is_quiet) { // don't print if told to be quiet
+		return;
+	}
 	const int errcpy = errno; // copy of errno in case of overwrite
 	const size_t flen = strlen(fmt);
 	/* check if an errno msg is desired */

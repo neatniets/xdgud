@@ -28,7 +28,7 @@ main(
 	/* parse options */
 	int optc;
 	if (!is_xdg_user_dir) {
-		while (optc = getopt(argc, argv, "hv"), optc != -1) {
+		while (optc = getopt(argc, argv, "hq"), optc != -1) {
 			switch (optc) {
 			case '?':
 				/* unknown option; getopt() printed error */
@@ -36,12 +36,13 @@ main(
 			case 'h': // help
 				print_help();
 				return 0;
-			case 'v': // verbose
-				/* do nothing for now */
-				puts("verbosity set; does nothing atm");
+			case 'q': // quiet
+				quiet(1);
 				break;
 			}
 		}
+	} else {
+		quiet(1); // xdg-user-dir is always quiet
 	}
 	/* set args to point to remaining args */
 	argc -= optind;
@@ -75,5 +76,5 @@ print_help(void) {
 		"\txdg-user-dir <dir-name>\n\n"
 		"\t" PRG_NAME " [<option> ...] -h\n"
 		"\t" PRG_NAME " [<option> ...] <dir-name> <commands> ...\n\n"
-		"\t<option> := -v");
+		"\t<option> := -q");
 }
