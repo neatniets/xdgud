@@ -1,10 +1,13 @@
 #define _XOPEN_SOURCE 700
 
 #include <stdio.h>
-#include <unistd.h>
+#include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "path.h"
+#include "printerr.h"
+#include "xdg.h"
 
 #define PRG_NAME "xdgud"
 #define XDG_NAME "xdg-user-dir"
@@ -12,6 +15,13 @@
 /** Print usage message. */
 static void
 print_help(void);
+
+/** Get the path to the specified userdir.
+ * @return abs path, or NULL on error. */
+static char *
+get_dir(
+	const char *dirname //!< xdg dirname
+);
 
 int
 main(
@@ -43,6 +53,20 @@ main(
 	/* set args to point to remaining args */
 	argc -= optind;
 	argv += optind;
+	/* exit successfully if nothing is to happen */
+	if (argc <= 0) {
+		return 0;
+	}
+
+	char *dir = get_dir(*argv);
+	if (dir == NULL) {
+		printerr("did not find a userdir for '%s'\n", *argv);
+		return 1;
+	}
+	puts(dir);
+	free(dir);
+	argv++;
+	argc--;
 
 	/* print the rest of the args for now */
 	for (int i = 0; i < argc; i++) {
@@ -59,4 +83,18 @@ print_help(void) {
 		"\t" PRG_NAME " [<option> ...] -h\n"
 		"\t" PRG_NAME " [<option> ...] <dir-name> <commands> ...\n\n"
 		"\t<option> := -v");
+}
+
+static char *
+get_dir(
+	const char *dirname
+) {
+	FILE *fp = get_userdir_file();
+	if (fp == NULL) {
+		printerr("could not find userdir file\n");
+		return NULL;
+	}
+	char *dir = lookup_userdir(dirname, fp);
+	fclose(fp);
+	return dir;
 }
