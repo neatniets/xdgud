@@ -22,7 +22,6 @@ get_userdir_fpath(void);
 static FILE *
 get_userdir_file(void);
 
-
 /** Remove a newline from the end of the string, if there is one.
  * @return new length of string. */
 static size_t
@@ -51,6 +50,15 @@ static char *
 parse_xdg(
 	const char *str, //!< string to parse
 	const char *dirname //!< xdg dirname
+);
+
+/** Interpret the path definition found in the userdir file.
+ * Expansion may need to be done and quotes need to be removed.
+ * A successful return will need to be freed.
+ * @return abs path to userdir on success; NULL on error. */
+static char *
+interpret_udpath(
+	const char *udpath //!< userdir path def
 );
 
 char *
@@ -85,13 +93,16 @@ lookup_userdir(
 		if (line == NULL) {
 			continue;
 		}
-		/* remainder of line is the userdir path */
-		blen = strlen(line);
-		memmove(buf, line, blen * sizeof(*line));
-		buf[blen] = '\0';
+		/* must translate line into abs path */
+		char *path = interpret_udpath(line);
+		if (path == NULL) {
+			printerr("could not make a path out of '%s'\n", line);
+		}
+
 		/* cleanup */
 		fclose(udfp);
-		return buf;
+		free(buf);
+		return path;
 	}
 }
 
@@ -201,4 +212,44 @@ parse_xdg(
 		line += 1;
 		line = skipws(line);
 		return (char *)line;
+}
+
+static char *
+interpret_udpath(
+	const char *udpath
+) {
+	/* according to user-dirs.dirs(5), the path must be in the form of
+	 * "$HOME/path" or "/path", quotes included.
+	 * dumb? probably. but this function will still follow the
+	 * requirements. */
+
+	udpath++; // skip '"'
+	const char *prefix; // possibly empty path prefix
+	const char *suffix; // path suffix
+
+	/* determine if the home expansion is needed */
+	const char henv[] = "$HOME";
+	const size_t hlen = (sizeof(henv) / sizeof(*henv)) - 1;
+	if (strncmp(udpath, henv, hlen) == 0) { // home at start
+		prefix = getenv("HOME");
+		suffix = udpath + hlen;
+	} else {
+		prefix = "";
+		suffix = udpath;
+	}
+
+	const size_t plen = strlen(prefix);
+	const size_t slen = strlen(suffix) - 1; // -1 to rm '"'
+	/* alloc space */
+	const size_t len = plen + slen;
+	char *path = malloc((len + 1) * sizeof(*path));
+	if (path == NULL) {
+		printerr("malloc() error:");
+		return NULL;
+	}
+	/* copy contents */
+	memcpy(path, prefix, plen * sizeof(*prefix));
+	memcpy(path + plen, suffix, slen * sizeof(*suffix));
+	path[len] = '\0';
+	return path;
 }
