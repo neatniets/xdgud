@@ -23,6 +23,12 @@ static FILE *
 get_userdir_file(void);
 
 
+/** Remove a newline from the end of the string, if there is one.
+ * @return new length of string. */
+static size_t
+rmnl(
+	char *str //!< string
+);
 /** Skip leading whitespace in a string.
  * @return ptr to first non-ws char. */
 static char *
@@ -34,6 +40,15 @@ skipws(
  * @return num of chars parsed on success, <0 on error. */
 static ssize_t
 parse_dirname(
+	const char *str, //!< string to parse
+	const char *dirname //!< xdg dirname
+);
+/** Parse a full line for an XDG userdir spec.
+ * The return will be the start of the first \", as required in
+ * user-dirs.dirs(5).
+ * @return start of path def on success; NULL on error. */
+static char *
+parse_xdg(
 	const char *str, //!< string to parse
 	const char *dirname //!< xdg dirname
 );
@@ -63,24 +78,13 @@ lookup_userdir(
 			fclose(udfp);
 			return NULL;
 		}
-		if (buf[blen - 1] == '\n') { // remove newline
-			buf[blen - 1] = '\0';
-			blen--;
-		}
+		blen = rmnl(buf);
 
-		/* parsing line */
-		const char *line = skipws(buf);
-		ssize_t parsed = parse_dirname(line, dirname);
-		if (parsed < 0) {
+		/* try to parse for xdg */
+		const char *line = parse_xdg(buf, dirname);
+		if (line == NULL) {
 			continue;
 		}
-		line += parsed;
-		line = skipws(line);
-		if (*line != '=') {
-			continue;
-		}
-		line += 1;
-		line = skipws(line);
 		/* remainder of line is the userdir path */
 		blen = strlen(line);
 		memmove(buf, line, blen * sizeof(*line));
@@ -134,6 +138,17 @@ get_userdir_file(void) {
 }
 
 
+static size_t
+rmnl(
+	char *str
+) {
+	size_t len = strlen(str);
+	short has_newline = (str[len - 1] == '\n');
+	/* only rm newline if it exists */
+	str[len - 1] = (!has_newline * str[len - 1]) + (has_newline * '\0');
+	len -= has_newline;
+	return len;
+}
 static char *
 skipws(
 	const char *str
@@ -167,4 +182,23 @@ parse_dirname(
 		return -1;
 	}
 	return plen + dlen + slen;
+}
+static char *
+parse_xdg(
+	const char *str,
+	const char *dirname
+) {
+		const char *line = skipws(str);
+		ssize_t parsed = parse_dirname(line, dirname);
+		if (parsed < 0) {
+			return NULL;
+		}
+		line += parsed;
+		line = skipws(line);
+		if (*line != '=') {
+			return NULL;
+		}
+		line += 1;
+		line = skipws(line);
+		return (char *)line;
 }
