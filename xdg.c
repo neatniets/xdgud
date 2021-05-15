@@ -9,6 +9,20 @@
 #include "printerr.h"
 #include "xdg.h"
 
+/** Get the absolute path to the userdirs.dirs file.
+ * If the file isn't found, NULL is returned.
+ * A non-NULL return must be freed by a call to free().
+ * @return abs filepath, or NULL on error. */
+static char *
+get_userdir_fpath(void);
+/** Get a read-only file ptr to the user-dirs.dirs file.
+ * If the file isn't found, NULL is returned.
+ * A non-NULL return must be closed by a call to fclose().
+ * @return file ptr, or NULL on error. */
+static FILE *
+get_userdir_file(void);
+
+
 /** Skip leading whitespace in a string.
  * @return ptr to first non-ws char. */
 static char *
@@ -25,52 +39,14 @@ parse_dirname(
 );
 
 char *
-get_userdir_fpath(void) {
-	/* get config dir; the XDG implementations always use the first config
-	 * dir found, and don't try other directories if the dir exists and the
-	 * file doesn't. this behavior is followed here, using the first found
-	 * config dir. */
-	char *fpath = NULL;
-	size_t fpsz = 0;
-	ssize_t fplen = get_config_home(&fpath, &fpsz);
-	if (fplen < 0) {
-		printerr("could not find config dir\n");
-		return NULL;
-	}
-
-	/* append filename */
-	const char fname[] = "user-dirs.dirs";
-	fplen = path_append(&fpath, &fpsz, fname);
-	if (fplen < 0) {
-		printerr("could not append userdir filename\n");
-		return NULL;
-	}
-
-	return fpath; // file may not be accessible or exist
-}
-FILE *
-get_userdir_file(void) {
-	/* get the path to the file */
-	char *fpath = get_userdir_fpath();
-	if (fpath == NULL) {
-		printerr("did not find userdir file\n");
-		return NULL;
-	}
-	/* open the file */
-	FILE *fp = fopen(fpath, "r");
-	if (fp == NULL) {
-		printerr("failed to open file at '%s':", fpath);
-	}
-	/* cleanup */
-	free(fpath);
-	return fp;
-}
-
-char *
 lookup_userdir(
-	const char *dirname,
-	FILE *udfp
+	const char *dirname
 ) {
+	FILE *udfp = get_userdir_file();
+	if (udfp == NULL) {
+		printerr("could not obtain userdirs.dirs file\n");
+		return NULL;
+	}
 	fseek(udfp, 0L, SEEK_SET); // move to start of file
 	char *buf = NULL;
 	size_t balloc = 0;
@@ -84,6 +60,7 @@ lookup_userdir(
 				printerr("getline() error:");
 			}
 			free(buf);
+			fclose(udfp);
 			return NULL;
 		}
 		if (buf[blen - 1] == '\n') { // remove newline
@@ -108,9 +85,54 @@ lookup_userdir(
 		blen = strlen(line);
 		memmove(buf, line, blen * sizeof(*line));
 		buf[blen] = '\0';
+		/* cleanup */
+		fclose(udfp);
 		return buf;
 	}
 }
+
+static char *
+get_userdir_fpath(void) {
+	/* get config dir; the XDG implementations always use the first config
+	 * dir found, and don't try other directories if the dir exists and the
+	 * file doesn't. this behavior is followed here, using the first found
+	 * config dir. */
+	char *fpath = NULL;
+	size_t fpsz = 0;
+	ssize_t fplen = get_config_home(&fpath, &fpsz);
+	if (fplen < 0) {
+		printerr("could not find config dir\n");
+		return NULL;
+	}
+
+	/* append filename */
+	const char fname[] = "user-dirs.dirs";
+	fplen = path_append(&fpath, &fpsz, fname);
+	if (fplen < 0) {
+		printerr("could not append userdir filename\n");
+		return NULL;
+	}
+
+	return fpath; // file may not be accessible or exist
+}
+static FILE *
+get_userdir_file(void) {
+	/* get the path to the file */
+	char *fpath = get_userdir_fpath();
+	if (fpath == NULL) {
+		printerr("did not find userdir file\n");
+		return NULL;
+	}
+	/* open the file */
+	FILE *fp = fopen(fpath, "r");
+	if (fp == NULL) {
+		printerr("failed to open file at '%s':", fpath);
+	}
+	/* cleanup */
+	free(fpath);
+	return fp;
+}
+
 
 static char *
 skipws(

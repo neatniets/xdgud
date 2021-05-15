@@ -18,7 +18,7 @@ xdgud: $(OBJ)
 xdg-user-dir: xdgud
 	ln -s xdgud $@
 
-xdgud.o: path.h
+xdgud.o: path.h printerr.h xdg.h
 path.o: path.h printerr.h
 printerr.o: printerr.h
 xdg.o: xdg.h printerr.h path.h

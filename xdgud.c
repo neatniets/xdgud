@@ -16,13 +16,6 @@
 static void
 print_help(void);
 
-/** Get the path to the specified userdir.
- * @return abs path, or NULL on error. */
-static char *
-get_dir(
-	const char *dirname //!< xdg dirname
-);
-
 int
 main(
 	int argc,
@@ -58,7 +51,7 @@ main(
 		return 0;
 	}
 
-	char *dir = get_dir(*argv);
+	char *dir = lookup_userdir(*argv);
 	if (dir == NULL) {
 		printerr("did not find a userdir for '%s'\n", *argv);
 		return 1;
@@ -83,18 +76,4 @@ print_help(void) {
 		"\t" PRG_NAME " [<option> ...] -h\n"
 		"\t" PRG_NAME " [<option> ...] <dir-name> <commands> ...\n\n"
 		"\t<option> := -v");
-}
-
-static char *
-get_dir(
-	const char *dirname
-) {
-	FILE *fp = get_userdir_file();
-	if (fp == NULL) {
-		printerr("could not find userdir file\n");
-		return NULL;
-	}
-	char *dir = lookup_userdir(dirname, fp);
-	fclose(fp);
-	return dir;
 }
