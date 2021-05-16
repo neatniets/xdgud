@@ -16,4 +16,12 @@ See the manpage for more details.
 Installation
 ============
 Configure "config.mk" to suit your system.
-Then, `sudo make install`.
+To install:
+        `sudo make install`
+
+**NOTE:** a symbolic link to `xdgud` called `xdg-user-dir` is also made and
+installed by default.
+The manpage explains the details of the difference when invoking the command
+under the different names.
+If this is not desirable, simply remove that line from the `install` command in
+the Makefile.
