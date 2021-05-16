@@ -68,15 +68,12 @@ main(
 	argv++;
 	argc--;
 
-	if (is_xdg_user_dir) {
+	if ((is_xdg_user_dir) || (argc == 0)) {
 		puts(dir); // just print the dir and exit
 	} else {
 		if (make_cwd_abs(argv, argc) < 0) {
 			printerr("failed to replace cwd paths\n");
 			return 1;
-		}
-		if (argc == 0) { // do nothing if no commands
-			return 0;
 		}
 		/* change to new dir */
 		if (chdir(dir) < 0) {
@@ -85,8 +82,8 @@ main(
 		}
 		/* execute command */
 		execvp(argv[0], argv);
-		printerr("execvp() error:");
-		printerr_args(argc, argv);
+		printerr("execvp(%s) error:", argv[0]);
+		printerr_args(argc - 1, argv + 1);
 		free(dir);
 		return 1;
 	}
@@ -110,6 +107,7 @@ printerr_args(
 	char *argv[]
 ) {
 	/* not really possible to print these all together */
+	printerr("args passed to command: ");
 	for (int i = 0; i < argc; i++) {
 		printerr("%s ", argv[i]);
 	}
