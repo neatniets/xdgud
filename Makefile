@@ -39,4 +39,4 @@ xdg.o: xdg.h printerr.h path.h
 .c.o:
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-.PHONY: all clean
+.PHONY: all clean install uninstall
