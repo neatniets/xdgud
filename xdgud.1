@@ -1,0 +1,185 @@
+.TH XDGUD 1 "May 2021" niets "User Commands"
+.SH NAME
+xdgud, xdg-user-dir \- find and/or execute commands in an XDG user dir
+.
+.SH SYNOPSIS
+.B xdg-user-dir
+.I dir-name
+.PP
+.B xdgud
+.RB [ \-q ]
+.B \-h
+.br
+.B xdgud
+.RB [ \-q ]
+.I dir-name
+.RI [ command
+.IR ... ]
+.
+.SH DESCRIPTION
+.SS xdgud
+Executes
+.IR command (s)
+in the XDG user directory specified by
+.IR dir-name .
+If no
+.IR command (s)
+are given,
+simply prints the path pertaining to
+.IR dir-name ,
+if one is found.
+Any arguments after
+.I dir-name
+that are exactly
+.I .
+or start with
+.I ./
+will have those parts replaced by the absolute path to the current directory.
+E.g.
+If the current working directory is
+.IR /home/asdf/dir ,
+.I ./subdir
+would be replaced with
+.I /home/asdf/dir/subdir
+upon execution of
+.IR command (s).
+.
+.PP
+The rationale is to be able to execute commands in the XDG user directories,
+while still maintaining a relation with the current directory.
+An example usage would be to
+.BR cp (1)
+a file from
+.B XDG_TEMPLATES_DIR
+into the current directory.
+This example and others can be seen in the
+.B EXAMPLES
+section.
+.
+.SS xdg-user-dir
+.BR xdgud ()
+can be executed as
+.BR xdg-user-dir (),
+in which case it behaves like the implementation from
+.UR freedesktop.org
+.UE .
+The user path for the
+.I dir-name
+is printed and the command exits.
+.
+.PP
+There is a key difference from that implementation, however.
+If a userdir for
+.I dir-name
+is not found in
+.IR user-dirs.dirs ,
+nothing is printed,
+and the program exits with an error status.
+The
+.B NOTES
+section has a lengthier description of this.
+.
+.SH OPTIONS
+.TP
+.B \-h
+Prints a usage message and exits.
+.
+.TP
+.B \-q
+Tell the program to be quiet.
+This stops all error messages from being printed;
+only the directory path, if found, will be printed.
+Useful in shell scripts.
+This option is always on when executing the program as
+.BR xdg-user-dir .
+.
+.SH EXIT STATUS
+.TP
+.B 0
+Success.
+If no
+.I dir-name
+is specified,
+no path will be printed,
+but the program will still exit with this status.
+.
+.TP
+.B >0
+Directory not found due to some error.
+.
+.SH NOTES
+.UR freedesktop.org
+.UE 's
+implementation of
+.BR xdg-user-dir ()
+has fallbacks if no directory is found.
+In all cases except
+.BR XDG_DESKTOP_DIR ,
+it will return the user's
+.B HOME
+instead of printing nothing and/or failing.
+Any program or any person asking for a specific directory has no way of knowing
+if the directory was found,
+or if the user literally specified for their home directory to be this
+directory.
+.
+.PP
+This is not the case in this implementation.
+No path is printed if one isn't found,
+and the program will exit with an error status.
+Error messages may be printed,
+but those can be silenced with
+.BR \-q .
+.
+.SH ENVIRONMENT
+.TP
+.B XDG_CONFIG_HOME
+Location of the
+.I user-dirs.dirs
+file.
+If not set,
+a default of
+.I $HOME/.config
+is used.
+.
+.SH FILES
+.TP
+.I user-dirs.dirs
+See
+.BR user-dirs.dirs (5).
+.
+.SH EXAMPLES
+Copy a file from the user's template directory to the current directory.
+.IP
+.nf
+.RB "$ " "xdgud TEMPLATES cp boiler-plate.c ./"
+.fi
+.
+.PP
+Rename a picture in the picture directory.
+.IP
+.nf
+.RB "$ " "xdgud PICTURES mv lovely-wife.png psycho-ex.png"
+.fi
+.
+.PP
+Echo a string of commands to make sure the paths expanded correctly.
+.IP
+.nf
+.RB "$ " pwd
+/home/asdf
+.RB "$ " "xdgud DESKTOP echo ./subdir otherdir/subdir ./../../distant-dir"
+.br
+/home/asdf/subdir otherdir/subdir /home/asdf/../../distant-dir
+.fi
+.
+.SH COPYRIGHT
+Licensed under the MIT license.
+See
+.I LICENSE.txt
+for details.
+.
+.SH SEE ALSO
+.BR xdg-user-dir (1),
+.BR user-dirs.dirs (5)
+.
