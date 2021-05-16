@@ -1,7 +1,9 @@
+#include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "path.h"
 #include "printerr.h"
@@ -12,6 +14,11 @@ static short
 is_set(
 	const char *env_var //!< string returned from getenv()
 );
+/** Allocate a string containing the current working directory.
+ * Return must be freed on successful return.
+ * @return string of cwd; NULL on error. */
+static char *
+alloc_cwd(void);
 
 /** [Re-]allocate a string to accommodate the specified num of chars.
  * @p req_sz is the minimum num of chars, but the actual allocation may be
@@ -129,11 +136,79 @@ path_append(
 	return plen;
 }
 
+int
+make_cwd_abs(
+	char **pathv,
+	size_t npaths
+) {
+	char *cwd = alloc_cwd();
+	if (cwd == NULL) {
+		printerr("couldn't obtain cwd\n");
+		return -1;
+	}
+	const size_t cwdlen = strlen(cwd);
+
+	short is_cwd_used = 0; // flag to indicate if cwd should be freed
+	const char prefix[] = "./";
+	const size_t plen = (sizeof(prefix) / sizeof(*prefix)) - 1;
+	for (size_t i = 0; i < npaths; i++) {
+		if (strcmp(pathv[i], ".") == 0) {
+			pathv[i] = cwd;
+			is_cwd_used = 1; // ptr to cwd; don't free it
+		} else if (strncmp(pathv[i], prefix, plen) == 0) {
+			/* clone cwd */
+			char *str = NULL;
+			size_t ssz = 0;
+			if (alloc_str(cwdlen + 1, &str, &ssz) < 0) {
+				printerr("couldn't alloc str for new path\n");
+				return -1;
+			}
+			memcpy(str, cwd, (cwdlen + 1) * sizeof(*cwd));
+			/* append rest of path */
+			if (path_append(&str, &ssz, pathv[i] + plen) < 0) {
+				printerr("couldn't append path\n");
+				free(str);
+				return -1;
+			}
+			pathv[i] = str;
+		}
+	}
+
+	if (!is_cwd_used) {
+		free(cwd);
+	}
+	return 0;
+}
+
 static short
 is_set(
 	const char *env_var
 ) {
 	return !((env_var == NULL) || (*env_var == '\0'));
+}
+static char *
+alloc_cwd(void) {
+	char *cwd = NULL;
+	size_t cwdsz = 0;
+	size_t try_sz = 1;
+
+	errno = ERANGE; // preset errno
+	do {
+		if (errno != ERANGE) { // error was caused by something else
+			printerr("getcwd() error:");
+			free(cwd);
+			return NULL;
+		}
+		/* alloc bigger str */
+		try_sz <<= 1;
+		if (alloc_str(try_sz, &cwd, &cwdsz) < 0) {
+			printerr("couldn't alloc str for cwd\n");
+			free(cwd); // safe is cwd is NULL
+			return NULL;
+		}
+	} while (getcwd(cwd, cwdsz) == NULL); // until getcwd() works
+
+	return cwd;
 }
 
 static int

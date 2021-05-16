@@ -40,4 +40,16 @@ path_append(
 	const char *src //!< string to append
 );
 
+/** Replace paths referring to the current dir with their absolute path.
+ * Any path that is exactly "." or starts with "./" is replaced with the
+ * absolute path to the current working directory.
+ * The replaced paths are malloc'd, but there's no convenient way to return the
+ * information of which paths are altered.
+ * @return 0 on success; <0 on error. */
+int
+make_cwd_abs(
+	char **pathv, //!< array of paths
+	size_t npaths //!< num of paths
+);
+
 #endif

@@ -16,6 +16,13 @@
 static void
 print_help(void);
 
+/** Print the args using printerr. */
+static void
+printerr_args(
+	int argc, //!< num args
+	char *argv[] //!< arg array
+);
+
 int
 main(
 	int argc,
@@ -52,21 +59,39 @@ main(
 		return 0;
 	}
 
+	/* get the dir */
 	char *dir = lookup_userdir(*argv);
 	if (dir == NULL) {
 		printerr("did not find a userdir for '%s'\n", *argv);
 		return 1;
 	}
-	puts(dir);
-	free(dir);
 	argv++;
 	argc--;
 
-	/* print the rest of the args for now */
-	for (int i = 0; i < argc; i++) {
-		puts(argv[i]);
+	if (is_xdg_user_dir) {
+		puts(dir); // just print the dir and exit
+	} else {
+		if (make_cwd_abs(argv, argc) < 0) {
+			printerr("failed to replace cwd paths\n");
+			return 1;
+		}
+		if (argc == 0) { // do nothing if no commands
+			return 0;
+		}
+		/* change to new dir */
+		if (chdir(dir) < 0) {
+			printerr("chdir(%s) error:", dir);
+			return 1;
+		}
+		/* execute command */
+		execvp(argv[0], argv);
+		printerr("execvp() error:");
+		printerr_args(argc, argv);
+		free(dir);
+		return 1;
 	}
 
+	free(dir);
 	return 0;
 }
 
@@ -77,4 +102,16 @@ print_help(void) {
 		"\t" PRG_NAME " [<option> ...] -h\n"
 		"\t" PRG_NAME " [<option> ...] <dir-name> <commands> ...\n\n"
 		"\t<option> := -q");
+}
+
+static void
+printerr_args(
+	int argc,
+	char *argv[]
+) {
+	/* not really possible to print these all together */
+	for (int i = 0; i < argc; i++) {
+		printerr("%s ", argv[i]);
+	}
+	printerr("\n");
 }
